@@ -16,6 +16,9 @@ contract Delance {
     uint public price;
     Request[] public requests;
 
+    event RequestCreated(string title, uint256 amount, bool locked, bool paid);
+    event RequestUnlocked(uint256 index);
+
     constructor(address _freelancer, uint _deadline) payable {
         employer = msg.sender;
         freelancer = _freelancer;
@@ -32,6 +35,11 @@ contract Delance {
         _;
     }
 
+    modifier onlyEmployer() {
+        require(msg.sender == employer, "Only employer!");
+        _;
+    }
+
     function createRequest(string memory _title, uint256 _amount) public onlyFreelancer {
         Request memory request = Request({
             title: _title,
@@ -41,9 +49,19 @@ contract Delance {
         });
 
         requests.push(request);
+
+        emit RequestCreated(_title, _amount, request.locked, request.paid);
     }
 
     function getAllRequests() public view returns (Request[] memory) {
         return requests;
+    }
+
+    function unlockRequest(uint256 _index) public onlyEmployer {
+        Request storage request = requests[_index];
+        require(request.locked, "Already unlocked!");
+        request.locked = false;
+
+        emit RequestUnlocked(_index);
     }
 }
